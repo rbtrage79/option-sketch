@@ -80,7 +80,6 @@ export default function PayoffChart({ legs, spot, height = 120 }: PayoffChartPro
           data: yData,
           symbol: "none",
           lineStyle: { width: 1.5 },
-          areaStyle: { opacity: 0.15 },
           markLine: {
             silent: true,
             symbol: "none",
