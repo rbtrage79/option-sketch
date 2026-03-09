@@ -21,7 +21,8 @@ export function formatPercent(value: number): string {
 
 export function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString("en-US", {
+    // Append T12:00:00 to avoid UTC-midnight → local-timezone off-by-one day
+    return new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",

@@ -188,12 +188,14 @@ export default function CandlestickChart({ symbol, drawingTool, onToolDone }: Pr
           const p = params as Array<{ dataIndex: number; value: unknown; seriesType?: string }>;
           const bar = p.find((s) => s.seriesType === "candlestick");
           if (!bar) return "";
+          // ECharts candlestick data order: [open, close, low, high]
+          // We push: [b.open, b.close, b.low, b.high] → indices 0,1,2,3
           const v = bar.value as number[];
           const date = allDates[bar.dataIndex] ?? "";
           return [
             `<b>${date}</b>`,
-            `O: ${v[1]?.toFixed(2)}  H: ${v[3]?.toFixed(2)}`,
-            `L: ${v[2]?.toFixed(2)}  C: ${v[0]?.toFixed(2)}`,
+            `O: ${v[0]?.toFixed(2)}  C: ${v[1]?.toFixed(2)}`,
+            `L: ${v[2]?.toFixed(2)}  H: ${v[3]?.toFixed(2)}`,
           ].join("<br/>");
         },
       },
@@ -215,7 +217,8 @@ export default function CandlestickChart({ symbol, drawingTool, onToolDone }: Pr
             color: "#64748b",
             fontSize: 10,
             formatter: (val: string) => {
-              const d = new Date(val);
+              // Append T12:00:00 to avoid UTC midnight → local-time off-by-one
+              const d = new Date(`${val}T12:00:00`);
               return `${d.getMonth() + 1}/${d.getDate()}`;
             },
             // Show fewer labels to avoid crowding

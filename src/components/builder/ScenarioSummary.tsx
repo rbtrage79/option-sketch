@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { AlertCircle, CheckCircle2, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertCircle, CheckCircle2, MousePointerClick, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,20 @@ export default function ScenarioSummary({ onGenerateStrategies, toast }: Props) 
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
+        {/* ── No-scenario nudge ──────────────────────────────────────────── */}
+        {!scenario.kind && (
+          <div className="flex items-start gap-2 rounded-xl border border-brand-900/40 bg-brand-950/40 p-3">
+            <MousePointerClick className="mt-0.5 h-4 w-4 shrink-0 text-brand-400" />
+            <div>
+              <p className="text-xs font-medium text-brand-300">Start by drawing on the chart</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                Click <span className="text-slate-300">Target Point</span> or{" "}
+                <span className="text-slate-300">Draw Path</span> in the toolbar, then click on the chart to set your price outlook.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Symbol */}
         <Row label="Symbol">
           <span className="font-mono text-sm font-bold text-white">

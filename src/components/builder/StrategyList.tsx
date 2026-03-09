@@ -102,15 +102,14 @@ export default function StrategyList({
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium text-slate-400">
           {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}
+          {isGenerating && (
+            <span className="ml-1.5 text-[10px] text-slate-600">
+              · simulating…
+            </span>
+          )}
         </p>
 
         <div className="flex items-center gap-2">
-          {isGenerating && (
-            <span className="flex items-center gap-1 text-[10px] text-slate-500">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Simulating {progress}%
-            </span>
-          )}
           {compareCount >= 2 && (
             <Button
               size="sm"
@@ -133,6 +132,16 @@ export default function StrategyList({
           </Button>
         </div>
       </div>
+
+      {/* Simulation progress bar */}
+      {isGenerating && (
+        <div className="h-1 overflow-hidden rounded-full bg-surface-700">
+          <div
+            className="h-full rounded-full bg-brand-500 transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
 
       {/* Error banner */}
       {generateError && (

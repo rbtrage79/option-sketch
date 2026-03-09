@@ -18,6 +18,11 @@ export default function DistributionChart({
   height = 180,
 }: Props) {
   const option: EChartsOption = useMemo(() => {
+    // Guard: nothing to render if histogram is empty
+    if (histogram.length === 0) {
+      return { animation: false, backgroundColor: "transparent" };
+    }
+
     const categories = histogram.map((b) => b.x.toFixed(0));
     const counts = histogram.map((b) => ({
       value: b.count,
@@ -28,33 +33,32 @@ export default function DistributionChart({
       },
     }));
 
-    // Find EV bin index for markLine
-    const evIdx = histogram.reduce(
-      (best, b, i) =>
-        Math.abs(b.x - ev) < Math.abs(histogram[best].x - ev) ? i : best,
-      0
-    );
-
-    // Breakeven markLines
-    const beMarkLines = breakevens.slice(0, 3).map((be) => {
-      const beIdx = histogram.reduce(
+    // Helper: find nearest histogram bin index for a given target value
+    function nearestBinIdx(target: number): number {
+      return histogram.reduce(
         (best, b, i) =>
-          Math.abs(b.x - be) < Math.abs(histogram[best].x - be) ? i : best,
+          Math.abs(b.x - target) < Math.abs(histogram[best].x - target) ? i : best,
         0
       );
-      return {
-        name: `BE $${be.toFixed(0)}`,
-        xAxis: String(histogram[beIdx]?.x.toFixed(0) ?? beIdx),
-        lineStyle: { color: "#f59e0b", type: "dashed" as const, width: 1.5 },
-        label: {
-          show: true,
-          color: "#f59e0b",
-          fontSize: 9,
-          formatter: () => `BE`,
-          position: "end" as const,
-        },
-      };
-    });
+    }
+
+    // markLine xAxis values must match a category string for category-type axes
+    const zeroCategory = categories[nearestBinIdx(0)];
+    const evCategory   = categories[nearestBinIdx(ev)];
+
+    // Breakeven markLines
+    const beMarkLines = breakevens.slice(0, 3).map((be) => ({
+      name: `BE $${be.toFixed(0)}`,
+      xAxis: categories[nearestBinIdx(be)],
+      lineStyle: { color: "#f59e0b", type: "dashed" as const, width: 1.5 },
+      label: {
+        show: true,
+        color: "#f59e0b",
+        fontSize: 9,
+        formatter: () => `BE`,
+        position: "end" as const,
+      },
+    }));
 
     return {
       animation: false,
@@ -103,17 +107,23 @@ export default function DistributionChart({
             symbol: "none",
             silent: true,
             data: [
-              // Zero line
+              // Zero P/L line — use nearest bin category so it always renders
               {
-                name: "0",
-                xAxis: "0",
+                name: "zero",
+                xAxis: zeroCategory,
                 lineStyle: { color: "#64748b", type: "solid" as const, width: 1.5 },
-                label: { show: false },
+                label: {
+                  show: true,
+                  color: "#64748b",
+                  fontSize: 9,
+                  formatter: () => "$0",
+                  position: "start" as const,
+                },
               },
               // EV line
               {
                 name: `EV $${ev.toFixed(0)}`,
-                xAxis: String(histogram[evIdx]?.x.toFixed(0) ?? evIdx),
+                xAxis: evCategory,
                 lineStyle: { color: "#6366f1", type: "dashed" as const, width: 1.5 },
                 label: {
                   show: true,

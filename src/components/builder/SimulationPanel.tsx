@@ -280,6 +280,13 @@ export default function SimulationPanel({ onGenerate }: Props) {
           )}
         </Button>
 
+        {/* Indeterminate progress bar while running */}
+        {isRunning && (
+          <div className="h-0.5 overflow-hidden rounded-full bg-surface-700">
+            <div className="h-full w-1/3 animate-[shimmer_1.2s_ease-in-out_infinite] rounded-full bg-brand-500" />
+          </div>
+        )}
+
         {!isScenarioReady && (
           <p className="text-center text-xs text-slate-600">
             Draw a target on the chart to enable simulation.

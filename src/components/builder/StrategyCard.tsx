@@ -156,17 +156,20 @@ export default function StrategyCard({
               value={breakevens.map((b) => formatPrice(b)).join(" / ")}
             />
           )}
-          <div className="flex gap-3">
-            <MetricRow
-              label="PoP"
-              value={simulation ? popStr : "simulating…"}
-              muted={!simulation}
-            />
-            <MetricRow
-              label="EV"
-              value={simulation ? evStr : "—"}
-              muted={!simulation}
-            />
+          {/* PoP + EV in a 2-column grid so each MetricRow's justify-between works */}
+          <div className="grid grid-cols-2 gap-2 rounded border border-surface-700/50 bg-surface-800/40 px-2 py-1.5">
+            <div>
+              <span className="text-[10px] text-slate-500">PoP</span>
+              <p className={cn("font-mono text-xs font-medium", !simulation ? "text-slate-500" : simulation.pop >= 0.55 ? "text-bull" : simulation.pop <= 0.35 ? "text-bear" : "text-amber-400")}>
+                {simulation ? popStr : "simulating…"}
+              </p>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-500">EV</span>
+              <p className={cn("font-mono text-xs font-medium", !simulation ? "text-slate-500" : simulation.ev >= 0 ? "text-bull" : "text-bear")}>
+                {simulation ? evStr : "—"}
+              </p>
+            </div>
           </div>
         </div>
 

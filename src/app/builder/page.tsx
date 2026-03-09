@@ -177,10 +177,10 @@ function BuilderInner() {
             strategyCount={candidates.length}
           />
 
-          {/* Tab content */}
-          <div className="flex-1 overflow-y-auto p-3">
+          {/* Tab content — each tab owns its own scroll/overflow */}
+          <div className="flex-1 overflow-hidden">
             {activeTab === "draw" && (
-              <div className="flex flex-col gap-3">
+              <div className="flex h-full flex-col gap-3 overflow-y-auto p-3">
                 <ScenarioSummary
                   onGenerateStrategies={handleGenerateStrategies}
                   toast={toast}
@@ -190,7 +190,7 @@ function BuilderInner() {
             )}
 
             {activeTab === "chat" && (
-              <div className="flex h-full flex-col" style={{ minHeight: "360px" }}>
+              <div className="flex h-full flex-col p-3">
                 <ChatPanel
                   onGenerate={handleGenerateStrategies}
                   onOpenGuidedQA={() => setGuidedQAOpen(true)}
@@ -199,12 +199,14 @@ function BuilderInner() {
             )}
 
             {activeTab === "strategies" && (
-              <StrategyList
-                onGenerate={handleGenerateStrategies}
-                isGenerating={isGenerating}
-                progress={progress}
-                generateError={generateError}
-              />
+              <div className="h-full overflow-y-auto p-3">
+                <StrategyList
+                  onGenerate={handleGenerateStrategies}
+                  isGenerating={isGenerating}
+                  progress={progress}
+                  generateError={generateError}
+                />
+              </div>
             )}
           </div>
         </div>
