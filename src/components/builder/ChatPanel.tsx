@@ -79,8 +79,15 @@ const EXAMPLE_PROMPTS = [
 ];
 
 export default function ChatPanel({ onGenerate, onOpenGuidedQA }: ChatPanelProps) {
-  const { selectedSymbol, scenario, chatMessages, addChatMessage, updateScenario } =
-    useStore();
+  const {
+    selectedSymbol,
+    scenario,
+    chatMessages,
+    addChatMessage,
+    updateScenario,
+    bars: storeBars,
+    marketStatus,
+  } = useStore();
 
   const [input, setInput] = useState("");
   const [lastResult, setLastResult] = useState<ParseResult | null>(null);
@@ -122,8 +129,13 @@ export default function ChatPanel({ onGenerate, onOpenGuidedQA }: ChatPanelProps
         updates.kind = "pointTarget";
       } else if (result.direction && result.magnitudePct != null) {
         // Derive a targetPrice from direction + magnitude
-        const bars = generateMockBars(selectedSymbol, 1);
-        const spotNow = bars[bars.length - 1].close;
+        let spotNow: number;
+        if (marketStatus === "ready" && storeBars.length > 0) {
+          spotNow = storeBars[storeBars.length - 1].close;
+        } else {
+          const bars = generateMockBars(selectedSymbol, 1);
+          spotNow = bars[bars.length - 1].close;
+        }
         const factor =
           result.direction === "up"
             ? 1 + result.magnitudePct / 100

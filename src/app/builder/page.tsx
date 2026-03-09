@@ -3,7 +3,7 @@
 import React, { Suspense, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, PenLine, MessageSquare, Wand2 } from "lucide-react";
+import { ChevronDown, PenLine, MessageSquare, Wand2, Wifi, WifiOff, Loader2 } from "lucide-react";
 import DrawingToolbar from "@/components/builder/DrawingToolbar";
 import ScenarioSummary from "@/components/builder/ScenarioSummary";
 import SimulationPanel from "@/components/builder/SimulationPanel";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { useRecommender } from "@/hooks/useRecommender";
+import { useMarketData } from "@/hooks/useMarketData";
 import { useStore } from "@/lib/store";
 import { SYMBOLS } from "@/lib/types";
 import type { DrawingTool, SidebarTab } from "@/lib/types";
@@ -81,7 +82,10 @@ function BuilderInner() {
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") as SidebarTab | null;
 
-  const { selectedSymbol, setSymbol, setActiveTool, resetScenario, candidates } = useStore();
+  const {
+    selectedSymbol, setSymbol, setActiveTool, resetScenario, candidates,
+    marketStatus, bars: storeBars,
+  } = useStore();
   const { toasts, toast, dismiss } = useToast();
 
   const [localTool, setLocalTool] = useState<DrawingTool>("none");
@@ -91,6 +95,9 @@ function BuilderInner() {
   const [guidedQAOpen, setGuidedQAOpen] = useState(false);
 
   const { generate, isGenerating, progress, error: generateError } = useRecommender();
+
+  // Kick off live market data fetch (bars + options chain) for selected symbol
+  useMarketData();
 
   function handleToolChange(tool: DrawingTool) {
     setLocalTool(tool);
@@ -144,6 +151,32 @@ function BuilderInner() {
         <DrawingToolbar activeTool={localTool} onToolChange={handleToolChange} />
 
         <div className="flex-1" />
+
+        {/* Live data status badge */}
+        {marketStatus === "loading" && (
+          <span className="flex items-center gap-1 text-[10px] text-slate-500">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Fetching live data…
+          </span>
+        )}
+        {marketStatus === "ready" && (
+          <span
+            className="flex items-center gap-1 text-[10px] text-bull/70"
+            title={`Live data · ${storeBars.length} bars`}
+          >
+            <Wifi className="h-3 w-3" />
+            Live
+          </span>
+        )}
+        {marketStatus === "error" && (
+          <span
+            className="flex items-center gap-1 text-[10px] text-slate-600"
+            title="Using simulated data"
+          >
+            <WifiOff className="h-3 w-3" />
+            Simulated
+          </span>
+        )}
 
         {localTool === "path" && (
           <Button

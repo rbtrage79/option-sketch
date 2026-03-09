@@ -8,12 +8,22 @@ import type {
   RecommendedStrategy,
   Constraints,
   ChatMessage,
+  HistoricalBar,
+  OptionChain,
 } from "@/lib/types";
+
+export type MarketStatus = "idle" | "loading" | "ready" | "error";
 
 interface StoreState {
   // ── Core data ─────────────────────────────────────────────────────────────
   selectedSymbol: string;
   scenario: Partial<Scenario>;
+
+  // ── Market data (live or mock) ─────────────────────────────────────────────
+  bars: HistoricalBar[];
+  chain: OptionChain | null;
+  marketStatus: MarketStatus;
+  marketError: string | null;
 
   // ── Recommendation state ──────────────────────────────────────────────────
   candidates: RecommendedStrategy[];
@@ -33,6 +43,9 @@ interface StoreState {
   setActiveTool: (tool: DrawingTool) => void;
   setUIMode: (mode: UIMode) => void;
 
+  setMarketData: (bars: HistoricalBar[], chain: OptionChain) => void;
+  setMarketStatus: (status: MarketStatus, error?: string | null) => void;
+
   setCandidates: (candidates: RecommendedStrategy[]) => void;
   updateCandidate: (id: string, patch: Partial<RecommendedStrategy>) => void;
   clearCandidates: () => void;
@@ -51,6 +64,10 @@ const defaultScenario: Partial<Scenario> = {
 export const useStore = create<StoreState>((set) => ({
   selectedSymbol: "SPY",
   scenario: { ...defaultScenario },
+  bars: [],
+  chain: null,
+  marketStatus: "idle",
+  marketError: null,
   candidates: [],
   constraints: {},
   chatMessages: [],
@@ -58,10 +75,14 @@ export const useStore = create<StoreState>((set) => ({
   uiMode: "simple",
 
   setSymbol: (symbol) =>
-    set((state) => ({
+    set(() => ({
       selectedSymbol: symbol,
-      scenario: { symbol, uncertaintyLevel: state.scenario.uncertaintyLevel ?? 20 },
+      scenario: { symbol, uncertaintyLevel: 20 },
       candidates: [],
+      bars: [],
+      chain: null,
+      marketStatus: "idle",
+      marketError: null,
     })),
 
   updateScenario: (updates) =>
@@ -76,6 +97,12 @@ export const useStore = create<StoreState>((set) => ({
 
   setActiveTool: (tool) => set({ activeTool: tool }),
   setUIMode: (mode) => set({ uiMode: mode }),
+
+  setMarketData: (bars, chain) =>
+    set({ bars, chain, marketStatus: "ready", marketError: null }),
+
+  setMarketStatus: (status, error = null) =>
+    set({ marketStatus: status, marketError: error }),
 
   setCandidates: (candidates) => set({ candidates }),
   updateCandidate: (id, patch) =>

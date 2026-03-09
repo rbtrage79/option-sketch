@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { generateMockBars } from "@/lib/mockData";
 import { validateScenario } from "@/lib/schema";
+import type { HistoricalBar } from "@/lib/types";
 import { formatDate, formatPercent, formatPrice } from "@/lib/utils";
 import type { Toast } from "@/hooks/use-toast";
 
@@ -17,13 +18,18 @@ interface Props {
 }
 
 export default function ScenarioSummary({ onGenerateStrategies, toast }: Props) {
-  const { scenario, updateScenario, selectedSymbol } = useStore();
+  const { scenario, updateScenario, selectedSymbol, bars: storeBars, marketStatus } = useStore();
 
-  // Get current price (last close of mock data)
+  // Get current price from live bars when ready, else fall back to mock
   const currentPrice = useMemo(() => {
-    const bars = generateMockBars(selectedSymbol);
+    let bars: HistoricalBar[];
+    if (marketStatus === "ready" && storeBars.length > 0) {
+      bars = storeBars;
+    } else {
+      bars = generateMockBars(selectedSymbol);
+    }
     return bars[bars.length - 1]?.close ?? 0;
-  }, [selectedSymbol]);
+  }, [selectedSymbol, storeBars, marketStatus]);
 
   // Derive display values
   const targetPrice = useMemo(() => {

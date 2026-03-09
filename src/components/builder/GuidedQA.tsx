@@ -134,7 +134,7 @@ const STEP_DESCRIPTIONS = [
 // ---------------------------------------------------------------------------
 
 export default function GuidedQA({ open, onClose, onComplete }: GuidedQAProps) {
-  const { selectedSymbol, updateScenario, setConstraints } = useStore();
+  const { selectedSymbol, updateScenario, setConstraints, bars: storeBars, marketStatus } = useStore();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<QAAnswers>({});
 
@@ -158,8 +158,13 @@ export default function GuidedQA({ open, onClose, onComplete }: GuidedQAProps) {
 
   function handleFinish() {
     // Apply scenario updates
-    const bars = generateMockBars(selectedSymbol, 1);
-    const spot = bars[bars.length - 1].close;
+    let spot: number;
+    if (marketStatus === "ready" && storeBars.length > 0) {
+      spot = storeBars[storeBars.length - 1].close;
+    } else {
+      const bars = generateMockBars(selectedSymbol, 1);
+      spot = bars[bars.length - 1].close;
+    }
 
     const updates: Record<string, unknown> = {};
 

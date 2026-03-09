@@ -25,12 +25,17 @@ export default function StrategyList({
   progress,
   generateError,
 }: StrategyListProps) {
-  const { candidates, scenario, selectedSymbol } = useStore();
+  const { candidates, scenario, selectedSymbol, bars: storeBars, marketStatus } = useStore();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
 
-  const bars = generateMockBars(selectedSymbol, 1);
-  const spot = bars[bars.length - 1].close;
+  const spot =
+    marketStatus === "ready" && storeBars.length > 0
+      ? storeBars[storeBars.length - 1].close
+      : (() => {
+          const bars = generateMockBars(selectedSymbol, 1);
+          return bars[bars.length - 1].close;
+        })();
 
   function toggleCompare(id: string) {
     setSelectedIds((prev) =>

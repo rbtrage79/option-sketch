@@ -11,7 +11,7 @@ import ReactECharts from "echarts-for-react";
 import type { ECharts, EChartsOption } from "echarts";
 import { generateFutureDates, generateMockBars } from "@/lib/mockData";
 import { useStore } from "@/lib/store";
-import type { DrawingTool, PathPoint } from "@/lib/types";
+import type { DrawingTool, HistoricalBar, PathPoint } from "@/lib/types";
 import { formatDate, formatPrice } from "@/lib/utils";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -36,14 +36,20 @@ function isoFromIndex(allDates: string[], idx: number): string | null {
 
 export default function CandlestickChart({ symbol, drawingTool, onToolDone }: Props) {
   const chartRef = useRef<ReactECharts>(null);
-  const { scenario, updateScenario } = useStore();
+  const { scenario, updateScenario, bars: storeBars, marketStatus } = useStore();
 
   // In-progress path while drawing (before committed to store)
   const [draftPath, setDraftPath] = useState<PathPoint[]>([]);
 
   // ── Data ──────────────────────────────────────────────────────────────────
+  // Use live store bars when ready; fall back to mock while loading/on error
   const { bars, histDates, allDates, histCount } = useMemo(() => {
-    const bars = generateMockBars(symbol);
+    let bars: HistoricalBar[];
+    if (marketStatus === "ready" && storeBars.length > 0) {
+      bars = storeBars;
+    } else {
+      bars = generateMockBars(symbol);
+    }
     const histDates = bars.map((b) =>
       new Date(b.time * 1000).toISOString().slice(0, 10)
     );
@@ -55,7 +61,7 @@ export default function CandlestickChart({ symbol, drawingTool, onToolDone }: Pr
       allDates: [...histDates, ...futureDates],
       histCount: bars.length,
     };
-  }, [symbol]);
+  }, [symbol, storeBars, marketStatus]);
 
   const candlestickData = useMemo(
     () => [

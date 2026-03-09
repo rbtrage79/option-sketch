@@ -87,7 +87,13 @@ interface Props {
 }
 
 export default function SimulationPanel({ onGenerate }: Props) {
-  const { scenario, selectedSymbol } = useStore();
+  const {
+    scenario,
+    selectedSymbol,
+    bars: storeBars,
+    chain: storeChain,
+    marketStatus,
+  } = useStore();
   const { simulate, reset, result, isRunning, error } = useMonteCarlo();
 
   const [simMode, setSimMode] = useState<SimMode>("simple");
@@ -98,7 +104,10 @@ export default function SimulationPanel({ onGenerate }: Props) {
   // ---------------------------------------------------------------------------
   // Build chain & pick auto-expiry
   // ---------------------------------------------------------------------------
-  const chain = useMemo(() => generateOptionChain(selectedSymbol), [selectedSymbol]);
+  const chain = useMemo(
+    () => (marketStatus === "ready" && storeChain ? storeChain : generateOptionChain(selectedSymbol)),
+    [selectedSymbol, storeChain, marketStatus]
+  );
 
   // Initialise expiry to the one closest to targetDate (or ~28d out)
   useEffect(() => {
@@ -116,9 +125,12 @@ export default function SimulationPanel({ onGenerate }: Props) {
   // Derived scenario state
   // ---------------------------------------------------------------------------
   const spot = useMemo(() => {
+    if (marketStatus === "ready" && storeBars.length > 0) {
+      return storeBars[storeBars.length - 1].close;
+    }
     const bars = generateMockBars(selectedSymbol, 1);
     return bars[bars.length - 1]?.close ?? 100;
-  }, [selectedSymbol]);
+  }, [selectedSymbol, storeBars, marketStatus]);
 
   const vol = uncertaintyToVol(scenario.uncertaintyLevel ?? 20);
 

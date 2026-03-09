@@ -31,6 +31,7 @@ export function useRecommender(): UseRecommenderReturn {
     selectedSymbol,
     scenario,
     constraints,
+    chain: storeChain,
     setCandidates,
     updateCandidate,
   } = useStore();
@@ -45,12 +46,15 @@ export function useRecommender(): UseRecommenderReturn {
     setProgress(0);
     setError(null);
 
+    // Use live chain from store when available; fall back to mock
+    const chain = storeChain ?? generateOptionChain(selectedSymbol);
+    const spot = chain.underlyingPrice;
+
     // Build initial candidates synchronously
     let initialCandidates: RecommendedStrategy[];
     try {
-      const chain = generateOptionChain(selectedSymbol);
       initialCandidates = recommendStrategies(scenario, chain, constraints);
-    } catch (e) {
+    } catch {
       setError("Failed to generate strategies. Please try again.");
       setIsGenerating(false);
       return;
@@ -87,8 +91,6 @@ export function useRecommender(): UseRecommenderReturn {
 
       const candidate = initialCandidates[idx];
       const legs = candidate.strategy.legs;
-      const chain = generateOptionChain(selectedSymbol);
-      const spot = chain.underlyingPrice;
       const vol = uncertaintyToVol(scenario.uncertaintyLevel ?? 20);
 
       // Pick T from the first leg's expiry
@@ -120,7 +122,7 @@ export function useRecommender(): UseRecommenderReturn {
     };
 
     runNext();
-  }, [selectedSymbol, scenario, constraints, setCandidates, updateCandidate]);
+  }, [selectedSymbol, scenario, constraints, storeChain, setCandidates, updateCandidate]);
 
   return { generate, isGenerating, progress, error };
 }
