@@ -146,8 +146,15 @@ export type SimMode = "simple" | "advanced";
 export type SidebarTab = "draw" | "chat" | "strategies";
 export type CandidateBias = "up" | "down" | "neutral" | "volatile";
 
-export const SYMBOLS = ["SPY", "AAPL", "TSLA"] as const;
+export const SYMBOLS = [
+  "SPY", "QQQ", "IWM",
+  "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AMD",
+  "NFLX", "CRM",
+] as const;
 export type Symbol = (typeof SYMBOLS)[number];
+
+/** Popular symbols shown as quick-pick chips on the home page */
+export const POPULAR_SYMBOLS = ["SPY", "QQQ", "AAPL", "NVDA", "TSLA", "MSFT", "AMZN", "META"] as const;
 
 // ---------------------------------------------------------------------------
 // Strategy recommendation types (Step 3)

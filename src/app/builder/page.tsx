@@ -3,7 +3,7 @@
 import React, { Suspense, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, PenLine, MessageSquare, Wand2, Wifi, WifiOff, Loader2 } from "lucide-react";
+import { ChevronDown, PenLine, MessageSquare, Wand2, Wifi, WifiOff, Loader2, Search } from "lucide-react";
 import DrawingToolbar from "@/components/builder/DrawingToolbar";
 import ScenarioSummary from "@/components/builder/ScenarioSummary";
 import SimulationPanel from "@/components/builder/SimulationPanel";
@@ -76,6 +76,34 @@ function TabBar({
   );
 }
 
+// ── Ticker input ─────────────────────────────────────────────────────────────
+
+function TickerInput({ onSubmit }: { onSubmit: (sym: string) => void }) {
+  const [value, setValue] = React.useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const sym = value.trim().toUpperCase();
+    if (sym.length >= 1 && sym.length <= 6 && /^[A-Z.^]+$/.test(sym)) {
+      onSubmit(sym);
+      setValue("");
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="relative flex items-center">
+      <Search className="pointer-events-none absolute left-2 h-3 w-3 text-slate-600" />
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value.toUpperCase())}
+        placeholder="ticker…"
+        maxLength={6}
+        className="w-24 rounded-md border border-surface-700 bg-surface-800 py-1 pl-6 pr-2 text-xs font-bold text-white placeholder-slate-600 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      />
+    </form>
+  );
+}
+
 // ── Inner component ──────────────────────────────────────────────────────────
 
 function BuilderInner() {
@@ -122,27 +150,38 @@ function BuilderInner() {
     <div className="flex h-full flex-col overflow-hidden">
       {/* ── Top toolbar ─────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 border-b border-surface-800 bg-surface-900 px-4 py-2">
-        {/* Symbol selector */}
+        {/* Symbol picker: dropdown of popular + free-form input */}
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-slate-500">Symbol</span>
+          {/* Dropdown of known symbols */}
           <div className="relative">
             <select
-              value={selectedSymbol}
+              value={SYMBOLS.includes(selectedSymbol as typeof SYMBOLS[number]) ? selectedSymbol : ""}
               onChange={(e) => {
+                if (!e.target.value) return;
                 setSymbol(e.target.value);
                 resetScenario();
                 handleToolChange("none");
               }}
               className="appearance-none rounded-md border border-surface-700 bg-surface-800 py-1 pl-3 pr-7 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
+              {!(SYMBOLS as readonly string[]).includes(selectedSymbol) && (
+                <option value="">{selectedSymbol}</option>
+              )}
               {SYMBOLS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
+                <option key={s} value={s}>{s}</option>
               ))}
             </select>
             <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           </div>
+          {/* Free-form ticker input */}
+          <TickerInput
+            onSubmit={(sym) => {
+              setSymbol(sym);
+              resetScenario();
+              handleToolChange("none");
+            }}
+          />
         </div>
 
         <div className="h-5 w-px bg-surface-700" />

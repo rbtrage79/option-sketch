@@ -4,41 +4,52 @@
 // Fetches real OHLCV bars and options chains from Yahoo Finance.
 // Falls back to mock data on any network / CORS failure.
 //
-// Strategy:
-//  1. Try direct fetch to Yahoo Finance (works in many environments)
-//  2. On failure, retry via corsproxy.io (handles CORS)
-//  3. If both fail, throw so callers can fall back to mock data
+// Strategy (tried in order):
+//  1. Direct fetch to query1.finance.yahoo.com
+//  2. Direct fetch to query2.finance.yahoo.com (alt server)
+//  3. allorigins.win CORS proxy
+//  4. corsproxy.io CORS proxy
+//  If all fail → caller should fall back to mock data
 // ---------------------------------------------------------------------------
 
 import type { HistoricalBar, OptionChain, OptionContract } from "@/lib/types";
 import { blackScholes } from "@/lib/blackScholes";
 
 // ---------------------------------------------------------------------------
-// CORS-aware fetch helper
+// Proxy-aware fetch helper — tries each strategy until one works
 // ---------------------------------------------------------------------------
 
-const CORS_PROXY = "https://corsproxy.io/?";
+type UrlTransform = (url: string) => string;
+
+const FETCH_STRATEGIES: UrlTransform[] = [
+  (url) => url,                                                                                         // 1. direct q1
+  (url) => url.replace("query1.", "query2."),                                                           // 2. direct q2
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,                            // 3. allorigins → q1
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url.replace("query1.", "query2."))}`, // 4. allorigins → q2
+  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,                                         // 5. corsproxy
+];
 
 async function yfFetch(url: string): Promise<Response> {
-  // First try direct
-  try {
-    const res = await fetch(url, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (res.ok) return res;
-  } catch {
-    // CORS or network failure — fall through to proxy
+  let lastErr: unknown;
+
+  for (const transform of FETCH_STRATEGIES) {
+    const endpoint = transform(url);
+    try {
+      const res = await fetch(endpoint, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) return res;
+      // HTTP error (e.g. 429 rate-limit) — try next
+    } catch (err) {
+      lastErr = err;
+      // Network / CORS / timeout — try next
+    }
   }
 
-  // Retry via CORS proxy
-  const proxied = CORS_PROXY + encodeURIComponent(url);
-  const res = await fetch(proxied, {
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(12000),
-  });
-  if (!res.ok) throw new Error(`Yahoo Finance HTTP ${res.status}`);
-  return res;
+  throw new Error(
+    `Yahoo Finance unreachable for ${url}: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -70,14 +81,14 @@ interface YFChartResponse {
  */
 export async function fetchBars(symbol: string): Promise<HistoricalBar[]> {
   const url =
-    `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}` +
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
     `?interval=1d&range=6mo&includePrePost=false`;
 
   const res = await yfFetch(url);
   const json: YFChartResponse = await res.json();
 
   const result = json.chart.result?.[0];
-  if (!result) throw new Error("No chart data returned");
+  if (!result) throw new Error(`No chart data returned for ${symbol}`);
 
   const { timestamp, indicators } = result;
   const quote = indicators.quote[0];
@@ -94,7 +105,7 @@ export async function fetchBars(symbol: string): Promise<HistoricalBar[]> {
     bars.push({ time: timestamp[i], open: o, high: h, low: l, close: c, volume: v });
   }
 
-  if (bars.length === 0) throw new Error("Empty bars data");
+  if (bars.length === 0) throw new Error(`Empty bars data for ${symbol}`);
   return bars;
 }
 
@@ -138,17 +149,18 @@ interface YFOptionsResponse {
  */
 export async function fetchOptionChain(symbol: string, r = 0.02): Promise<OptionChain> {
   // ── Step 1: fetch default (nearest) expiry to get quote + expiration list ──
-  const baseUrl = `https://query2.finance.yahoo.com/v7/finance/options/${symbol}`;
+  const baseUrl =
+    `https://query1.finance.yahoo.com/v7/finance/options/${encodeURIComponent(symbol)}`;
   const baseRes = await yfFetch(baseUrl);
   const baseJson: YFOptionsResponse = await baseRes.json();
 
   const baseResult = baseJson.optionChain.result?.[0];
-  if (!baseResult) throw new Error("No options data returned");
+  if (!baseResult) throw new Error(`No options data returned for ${symbol}`);
 
   const spot = baseResult.quote.regularMarketPrice;
   const allExpiries = baseResult.expirationDates; // sorted unix timestamps
 
-  if (allExpiries.length === 0) throw new Error("No expiration dates");
+  if (allExpiries.length === 0) throw new Error(`No expiration dates for ${symbol}`);
 
   const now = Date.now() / 1000;
 

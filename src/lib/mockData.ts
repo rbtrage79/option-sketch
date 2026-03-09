@@ -18,11 +18,27 @@ function symbolToSeed(symbol: string): number {
     .reduce((acc, ch) => Math.imul(acc, 31) + ch.charCodeAt(0), 7);
 }
 
-// Starting prices per symbol so the mocked data looks realistic
+// Starting prices per symbol — approximate early-2026 levels used as
+// fallback when Yahoo Finance is unreachable.
 const INITIAL_PRICES: Record<string, number> = {
-  SPY: 452,
-  AAPL: 183,
-  TSLA: 258,
+  // ETFs
+  SPY: 598,
+  QQQ: 518,
+  IWM: 222,
+  DIA: 438,
+  // Mega-cap tech
+  AAPL: 242,
+  MSFT: 425,
+  NVDA: 138,
+  AMZN: 228,
+  GOOGL: 192,
+  META: 658,
+  TSLA: 320,
+  AMD: 132,
+  // Other large-caps
+  NFLX: 1045,
+  CRM: 315,
+  BABA: 105,
 };
 
 /**

@@ -13,9 +13,24 @@ import { generateMockBars } from "@/lib/mockData";
 // Per-symbol baseline implied volatility (ATM, ~30-day)
 // ---------------------------------------------------------------------------
 const BASE_IV: Record<string, number> = {
+  // ETFs — generally lower IV
   SPY: 0.17,
+  QQQ: 0.20,
+  IWM: 0.22,
+  DIA: 0.16,
+  // Mega-cap tech
   AAPL: 0.27,
-  TSLA: 0.52,
+  MSFT: 0.25,
+  NVDA: 0.48,
+  AMZN: 0.30,
+  GOOGL: 0.28,
+  META: 0.33,
+  TSLA: 0.55,
+  AMD: 0.50,
+  // Other
+  NFLX: 0.38,
+  CRM: 0.30,
+  BABA: 0.42,
 };
 
 // ---------------------------------------------------------------------------
