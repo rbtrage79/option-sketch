@@ -42,7 +42,8 @@ export function useMonteCarlo() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const worker = new Worker("/workers/monte-carlo.js");
+    const workerPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/workers/monte-carlo.js`;
+    const worker = new Worker(workerPath);
     workerRef.current = worker;
 
     worker.onmessage = (e: MessageEvent<WorkerMessage>) => {

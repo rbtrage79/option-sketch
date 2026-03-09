@@ -69,7 +69,8 @@ export function useRecommender(): UseRecommenderReturn {
       workerRef.current.terminate();
     }
 
-    const worker = new Worker("/workers/monte-carlo.js");
+    const workerPath = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/workers/monte-carlo.js`;
+    const worker = new Worker(workerPath);
     workerRef.current = worker;
 
     let idx = 0;
